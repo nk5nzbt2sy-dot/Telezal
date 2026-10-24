@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Telezal — jonli oʻzbek telekanallari</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0e;--panel:#131317;--line:#2b2b32;--tx:#ece8df;--mut:#8f8c85;--gold:#e0b863;--red:#b3122a}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font:14px/1.45 Manrope,system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);height:54px}
+.logo{font:600 24px 'Cormorant Garamond',Georgia,serif;letter-spacing:.3em}
+.tag{color:var(--mut);font-size:13px}
+#clock{color:var(--gold);font-variant-numeric:tabular-nums}
+main{display:grid;grid-template-columns:1fr 350px;height:calc(100dvh - 54px)}
+#stage{position:relative;overflow:hidden;background:#000;min-height:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+.ctl{position:absolute;display:flex;gap:6px}
+.ib{width:36px;height:36px;border-radius:8px;border:1px solid #ffffff30;background:#0009;font-size:17px;display:grid;place-items:center}
+.ib:hover{border-color:var(--gold)}
+#zoom{left:12px;top:12px;flex-direction:column}
+#tr{right:12px;top:12px}
+#tr .ib{width:auto;padding:0 12px;font-size:13px}
+#dist{position:absolute;left:12px;bottom:10px;color:#fffc;font-size:12px;text-shadow:0 1px 3px #000}
+#fps{position:absolute;right:12px;bottom:10px;color:#fff9;font-size:11px;font-variant-numeric:tabular-nums}
+#tip{position:absolute;pointer-events:none;background:#000c;border:1px solid var(--gold);padding:3px 8px;border-radius:6px;font-size:12px;display:none}
+#msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:80%;text-align:center;background:#000d;border:1px solid var(--line);padding:12px 16px;border-radius:10px;display:none}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px}
+h2{font:600 15px Manrope,sans-serif;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+h2 small{color:var(--mut);font-weight:400;font-size:12px}
+#chl{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ch{text-align:left;background:#1a1a20;border:1px solid var(--line);border-radius:8px;padding:9px 10px;display:flex;align-items:center;gap:7px;min-height:40px}
+.ch i{width:7px;height:7px;border-radius:50%;background:#e23b4e;flex:none}
+.ch.off{opacity:.45}.ch.off i{background:#555}
+.ch.on{border-color:var(--gold);background:#241f12}
+.btn{width:100%;border:1px solid var(--line);background:#1a1a20;border-radius:8px;padding:10px;text-align:center}
+.btn:hover{border-color:var(--gold)}
+.btn.main{background:var(--gold);color:#16130a;font-weight:700;border-color:var(--gold)}
+.row{display:flex;gap:8px;align-items:center}
+.mut{color:var(--mut);font-size:12.5px}
+#seatinfo{font-size:15px;margin-bottom:8px}
+#tvbox{position:fixed;left:0;top:0;width:2px;height:2px;overflow:hidden;opacity:.01;pointer-events:none;z-index:-1}
+#tvbox video{width:320px;height:180px}
+#tvbox .tvctl{display:none}
+#tvbox.full{width:100%;height:100%;opacity:1;pointer-events:auto;background:#000;z-index:60}
+#tvbox.full video{width:100%;height:100%;object-fit:contain}
+#tvbox.full .tvctl{display:flex;position:absolute;left:0;right:0;top:0;gap:8px;align-items:center;padding:12px;background:linear-gradient(#000b,#0000)}
+#tvname{flex:1;font-weight:700}
+dialog{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:92vw}
+dialog::backdrop{background:#000b}
+#map{display:grid;gap:5px;justify-content:center;margin:12px 0}
+.mr{display:flex;gap:5px;align-items:center}.mr b{width:18px;color:var(--mut);font-size:11px;font-weight:400}
+.st{width:26px;height:26px;border:0;border-radius:6px 6px 3px 3px;background:var(--red)}
+.st.t{background:#2b2b31;cursor:not-allowed}.st.s{background:var(--gold)}
+.aisle{width:16px}
+.scr{height:6px;background:linear-gradient(90deg,#0000,#ddd,#0000);border-radius:3px;margin:8px 20px}
+input{width:100%;background:#0c0c0f;border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:9px;margin:4px 0 10px}
+.leg{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--mut)}
+.leg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:var(--c)}
+@media(max-width:820px){
+ .tag{display:none}
+ main{display:block;height:auto}
+ #stage{height:58vh}
+ aside{border-left:0;border-top:1px solid var(--line)}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">TELEZAL</div>
+ <div class="tag">Bitta zal. Butun Oʻzbekiston telekanallari.</div>
+ <div class="mut">Toshkent <span id="clock">--:--</span></div>
+</header>
+<main>
+ <section id="stage">
+  <canvas id="cv"></canvas>
+  <div class="ctl" id="zoom">
+   <button class="ib" id="zi" aria-label="Yaqinlashtirish">+</button>
+   <button class="ib" id="zo" aria-label="Uzoqlashtirish">−</button>
+   <button class="ib" id="up" aria-label="Tepaga">↑</button>
+   <button class="ib" id="dn" aria-label="Pastga">↓</button>
+   <button class="ib" id="lf" aria-label="Chapga">←</button>
+   <button class="ib" id="rt" aria-label="Oʻngga">→</button>
+  </div>
+  <div class="ctl" id="tr">
+   <button class="ib" id="home">Zal koʻrinishi</button>
+   <button class="ib" id="fs" aria-label="Zalni toʻliq ekranga chiqarish">⛶</button>
+  </div>
+  <div id="dist"></div><div id="fps"></div><div id="tip"></div><div id="msg"></div>
+ </section>
+ <aside>
+  <div>
+   <h2>1. Kanalni tanlang <small id="chcount"></small></h2>
+   <div id="chl"></div>
+   <button class="btn" id="addbtn" style="margin-top:8px">+ Kanal yoki M3U roʻyxat qoʻshish</button>
+  </div>
+  <div>
+   <h2>2. Joyingizni tanlang</h2>
+   <div id="seatinfo" class="mut">Zaldagi istalgan boʻsh oʻrindiqni bosing</div>
+   <button class="btn" id="mapbtn">Oʻrindiqlar xaritasi</button>
+  </div>
+  <div>
+   <h2>3. Tomosha</h2>
+   <button class="btn main" id="tvfs">Kanalni toʻliq ekranda koʻrish</button>
+   <div class="row" style="margin-top:10px">
+    <button class="ib" id="mute" aria-label="Ovozni oʻchirish">🔊</button>
+    <input type="range" id="vol" min="0" max="1" step="0.05" value="1" style="margin:0" aria-label="Ovoz balandligi">
+   </div>
+   <div class="row" style="margin-top:10px"><span class="mut">Yorugʻlik</span><input type="range" id="lux" min="0.5" max="2" step="0.05" value="1" style="margin:0" aria-label="Zal yorugʻligi"></div>
+   <p class="mut" style="margin-top:10px">Zalni sichqoncha yoki barmoq bilan aylantiring, g‘ildirak bilan yaqinlashtiring.</p>
+  </div>
+ </aside>
+</main>
+
+<div id="tvbox">
+ <video id="tv" playsinline autoplay></video>
+ <div class="tvctl">
+  <button class="ib" id="tvx" aria-label="Chiqish">✕</button>
+  <button class="ib" id="tvp" aria-label="Oldingi kanal">‹</button>
+  <span id="tvname"></span>
+  <button class="ib" id="tvn" aria-label="Keyingi kanal">›</button>
+ </div>
+</div>
+
+<dialog id="dmap">
+ <h2>Oʻrindiqni tanlang <small>ekranga qarab</small></h2>
+ <div class="scr"></div>
+ <div id="map"></div>
+ <div class="leg"><span style="--c:var(--red)">Boʻsh</span><span style="--c:var(--gold)">Tanlangan</span><span style="--c:#2b2b31">Band</span></div>
+ <button class="btn" id="mapx" style="margin-top:12px">Yopish</button>
+</dialog>
+
+<dialog id="dadd">
+ <h2>Kanal qoʻshish</h2>
+ <label class="mut" for="an">Nomi (yagona kanal uchun)</label>
+ <input id="an" placeholder="Masalan: Yoshlar">
+ <label class="mut" for="au">Efir havolasi (.m3u8) yoki .m3u roʻyxat havolasi</label>
+ <input id="au" placeholder="https://...">
+ <div class="mut" id="aerr" style="margin-bottom:10px"></div>
+ <div class="row"><button class="btn" id="ac">Bekor qilish</button><button class="btn main" id="ao">Qoʻshish</button></div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ====== KANALLAR ======
+ Efir manzili (src) boʻlmagan kanallar xiraroq koʻrinadi. Manzil qoʻshish: "Kanal qoʻshish" tugmasi
+ yoki shu yerda { name:'Yoshlar', src:'https://.../index.m3u8' } koʻrinishida yozing. */
+const BUILTIN=['Oʻzbekiston 24','Oʻzbekiston','Yoshlar','Sport','Madaniyat va maʼrifat','Dunyo boʻylab','Kinoteatr','Navo','Bolajon','Milliy TV','MY5','Sevimli TV','Zoʻr TV','UzReport TV','Renessans TV','Toshkent','Mahalla'].map(n=>({name:n,src:''}));
+/* ===== OʻZ KANALLARINGIZNI SHU YERGA YOZING =====
+   Har bir kanal: {name:'Yoshlar',src:'https://.../index.m3u8'}, — vergul bilan ajrating. */
+const MY_CHANNELS=[
+ 
+];
+const PLAYLIST='https://iptv-org.github.io/iptv/countries/uz.m3u';
+let channels=[],cur=null;
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+function parseM3U(t){const o=[];let n=null;for(const l of t.split(/\r?\n/)){const s=l.trim();if(s.startsWith('#EXTINF'))n=s.split(',').slice(1).join(',').trim()||'Kanal';else if(s&&!s[0]=='#'&&n){}else if(s&&s[0]!=='#'&&n){o.push({name:n.replace(/\s*[\(\[].*?[\)\]]/g,'').trim()||n,src:s});n=null}}return o}
+function merge(list){
+ list.forEach(e=>{const k=norm(e.name);const f=channels.find(c=>{const a=norm(c.name);return a&&k&&(a===k||(a.length>3&&k.length>3&&(a.includes(k)||k.includes(a))))});
+  if(f){if(!f.src)f.src=e.src}else channels.push({...e})});
+ channels.sort((a,b)=>!!b.src-!!a.src);
+}
+function renderList(){
+ const L=$('chl');L.innerHTML='';
+ channels.forEach(c=>{const b=document.createElement('button');b.className='ch'+(c.src?'':' off')+(c===cur?' on':'');b.innerHTML='<i></i><span></span>';b.lastChild.textContent=c.name;b.title=c.src?'Jonli efir':'Efir manzili yoʻq — “Kanal qoʻshish” orqali kiriting';b.onclick=()=>pick(c);L.appendChild(b)});
+ $('chcount').textContent=channels.filter(c=>c.src).length+' ta efirda';
+}
+async function loadPlaylist(){
+ channels=BUILTIN.map(c=>({...c}));
+ merge(MY_CHANNELS);merge(store.get('custom',[]));renderList();
+ try{const r=await fetch(PLAYLIST);if(!r.ok)throw 0;merge(parseM3U(await r.text()))}
+ catch(e){note('Tayyor roʻyxatni yuklab boʻlmadi. “Kanal qoʻshish” orqali efir havolasini kiriting.',4500)}
+ renderList();
+}
+
+/* ====== VIDEO ====== */
+const V=$('tv');let hls=null,vtex=null,tainted=false;
+V.volume=store.get('vol',1);$('vol').value=V.volume;
+function note(t,ms){const m=$('msg');m.textContent=t;m.style.display=t?'block':'none';clearTimeout(note.t);if(ms)note.t=setTimeout(()=>m.style.display='none',ms)}
+function pick(c){
+ if(!c.src){note('Bu kanal uchun efir manzili yoʻq. “Kanal qoʻshish” tugmasi orqali .m3u8 havolasini kiriting.',5000);return}
+ cur=c;store.set('last',c.name);renderList();$('tvname').textContent=c.name;
+ note('Yuklanmoqda…');setScreen(false);
+ if(hls){hls.destroy();hls=null}
+ let u=c.src;if(location.protocol==='https:')u=u.replace(/^http:/,'https:');
+ const isFile=/\.(mp4|webm|ogg)(\?|$)/i.test(u);let retry=0;
+ if(!isFile&&window.Hls&&Hls.isSupported()){
+  hls=new Hls();hls.loadSource(u);hls.attachMedia(V);
+  hls.on(Hls.Events.ERROR,(e,d)=>{if(!d.fatal)return;
+   if(d.type===Hls.ErrorTypes.NETWORK_ERROR&&!retry++)hls.startLoad();
+   else if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&retry<3){retry++;hls.recoverMediaError()}
+   else fail()});
+ }else V.src=u;
+ V.play().catch(()=>{V.muted=true;V.play().catch(()=>{})});
+}
+function fail(){setScreen(false);note('Bu kanal hozir ochilmadi (efir oʻchiq yoki brauzer ruxsat bermadi). Boshqa kanalni tanlang.')}
+V.addEventListener('playing',()=>{note('');setScreen(true)});
+V.addEventListener('error',()=>{if(cur)fail()});
+function step(d){const l=channels.filter(c=>c.src);if(!l.length)return;const i=l.indexOf(cur);pick(l[(i+d+l.length)%l.length])}
+$('vol').oninput=e=>{V.volume=+e.target.value;V.muted=V.volume===0;store.set('vol',V.volume);$('mute').textContent=V.muted?'🔇':'🔊'};
+$('mute').onclick=()=>{V.muted=!V.muted;$('mute').textContent=V.muted?'🔇':'🔊'};
+
+/* ====== TOʻLIQ EKRAN ====== */
+const box=$('tvbox');
+function tvFull(){
+ if(!cur){note('Avval kanalni tanlang.',2500);return}
+ box.classList.add('full');
+ const r=box.requestFullscreen||box.webkitRequestFullscreen;
+ if(r){try{const p=r.call(box);p&&p.catch&&p.catch(()=>{})}catch(e){}}
+ else if(V.webkitEnterFullscreen){try{V.webkitEnterFullscreen()}catch(e){}}
+}
+function tvExit(){box.classList.remove('full');if(document.fullscreenElement===box)document.exitFullscreen()}
+$('tvfs').onclick=tvFull;$('tvx').onclick=tvExit;$('tvp').onclick=()=>step(-1);$('tvn').onclick=()=>step(1);
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)box.classList.remove('full')});
+document.addEventListener('keydown',e=>{if(!box.classList.contains('full'))return;
+ if(e.key==='Escape')tvExit();else if(e.key==='ArrowRight'||e.key==='ArrowUp')step(1);else if(e.key==='ArrowLeft'||e.key==='ArrowDown')step(-1)});
+$('fs').onclick=()=>{const s=$('stage');if(document.fullscreenElement)document.exitFullscreen();else(s.requestFullscreen||s.webkitRequestFullscreen).call(s)};
+
+/* ====== 3D ZAL ====== */
+const stage=$('stage'),cv=$('cv');
+let T=window.THREE,scr,idle,camera,renderer,scene;
+const R=8,C=12,seats=[];
+for(let r=0;r<R;r++)for(let c=0;c<C;c++)seats.push({r,c,x:c<6?-(1.2+(5-c)*.62):1.2+(c-6)*.62,t:.15+r*.3,z:-6+r*1.25,taken:(r*7+c*13+r*c)%5===0});
+let sel=-1,hov=-1,iB,iK;
+const pos=T?new T.Vector3(0,6.5,11.5):0,look=T?new T.Vector3(0,2.4,-8):0,tp=T?pos.clone():0,tl=T?look.clone():0;
+let dy=0,dp=0,tf=55;
+const SZ=-11.4;
+function idleTex(){const c=document.createElement('canvas');c.width=1280;c.height=720;const g=c.getContext('2d');
+ g.fillStyle='#0c0c10';g.fillRect(0,0,1280,720);
+ ['#e8e8e8','#e0c95a','#4ec9d0','#5cc860','#c957c0','#d4423b','#3b4fd4'].forEach((k,i)=>{g.fillStyle=k;g.fillRect(i*183+0,470,183,250)});
+ g.fillStyle='#ece8df';g.textAlign='center';g.font='600 110px Georgia,serif';g.fillText('TELEZAL',640,250);
+ g.font='42px sans-serif';g.fillStyle='#e0b863';g.fillText('Kanalni tanlang — efir shu ekranda chiqadi',640,340);
+ return new T.CanvasTexture(c)}
+function setScreen(v){if(!scr)return;scr.map=(v&&!tainted)?vtex:idle;scr.needsUpdate=true}
+const lin=h=>new T.Color(h).convertSRGBToLinear();
+/* Yorugʻlik hisobi (haqiqiy birliklar: metr, kandela, lyuks). Spot kandelasi I = lm / (2π(1−cos(θ/2))).
+   Soʻndirilgan LED downlight: 600 lm, 40° nur → ~1584 cd. Ekran: 48 cd/m² × ~60 m² ≈ 2880 cd, oʻrtacha kadr ~18% → 520 cd.
+   Rang harorati: downlight 2700K, devor chiroqlari 3000K, ekran 6500K. Kino boshlanganda zal chiroqlari 25% gacha soʻnadi. */
+const LT=[];let scrL,dim=1,pr=1,prMax=1;
+function build(){
+ renderer=new T.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+ renderer.physicallyCorrectLights=true;renderer.outputEncoding=T.sRGBEncoding;
+ renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.4;
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+ scene=new T.Scene();scene.background=lin(0x020203);scene.fog=new T.FogExp2(lin(0x030304),.014);
+ camera=new T.PerspectiveCamera(55,1,.1,60);
+ const M=(c,o={})=>new T.MeshStandardMaterial({color:lin(c),roughness:.85,...o});
+ const em=(c,k)=>new T.MeshStandardMaterial({color:0x000000,emissive:lin(c),emissiveIntensity:k,roughness:1});
+ const bx=(w,h,d,x,y,z,m,sh)=>{const b=new T.Mesh(new T.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.receiveShadow=true;b.castShadow=!!sh;scene.add(b);return b};
+ const m4=new T.Matrix4();
+ /* gilam: mayda tolali tekstura */
+ const cc=document.createElement('canvas');cc.width=cc.height=256;const g=cc.getContext('2d');g.fillStyle='#1b1b22';g.fillRect(0,0,256,256);
+ for(let i=0;i<3500;i++){g.fillStyle='rgba('+(i%2?'255,255,255':'0,0,0')+','+Math.random()*.07+')';g.fillRect(Math.random()*256,Math.random()*256,2,2)}
+ const ct=new T.CanvasTexture(cc);ct.wrapS=ct.wrapT=T.RepeatWrapping;ct.repeat.set(10,16);ct.encoding=T.sRGBEncoding;ct.anisotropy=8;
+ bx(16,.1,24,0,-.05,0,M(0xffffff,{map:ct,roughness:1}));
+ /* qobiq: devor, shift */
+ const wall=M(0x0d0d10,{roughness:1});
+ bx(16,.2,24,0,8.1,0,M(0x0a0a0c,{roughness:1}));
+ bx(.3,8,24,-8,4,0,wall);bx(.3,8,24,8,4,0,wall);bx(16,8,.3,0,4,12,wall);bx(16,8,.3,0,4,-12.2,wall);
+ /* akustik yongʻoq panellar (22 ta, har tomonda) */
+ const fins=new T.InstancedMesh(new T.BoxGeometry(.28,6.4,.12),M(0x3b2517,{roughness:.55}),44);
+ for(let i=0;i<22;i++)[-1,1].forEach((sd,k)=>fins.setMatrixAt(i*2+k,m4.setPosition(sd*7.7,3.6,-10.6+i*.96)));
+ fins.castShadow=fins.receiveShadow=true;scene.add(fins);
+ /* LED chiziqlar, poldagi yoʻlak chiroqlari, shiftdagi yoriq */
+ const led=em(0xffb46b,2.4);
+ for(let z=-10.1;z<=10.1;z+=2.88)[-7.58,7.58].forEach(x=>bx(.04,6,.06,x,3.6,z,led));
+ [-7.82,7.82].forEach(x=>bx(.03,.04,23,x,.18,0,em(0xff9a2e,1.6)));
+ [-4.5,4.5].forEach(x=>bx(.1,.03,22,x,7.97,0,led));
+ /* shiftdagi 6 ta downlight (600 lm, 2700K) */
+ const dl=em(0xffa757,3);
+ for(let r=0;r<2;r++)for(let c=0;c<3;c++){const x=(c-1)*4.2,z=-5+r*9;bx(.16,.03,.16,x,7.96,z,dl);
+  const L=new T.SpotLight(lin(0xffa757),1584,0,Math.PI/9,.55,2);L.position.set(x,7.9,z);L.target.position.set(x,0,z);scene.add(L,L.target);LT.push({l:L,k:1584})}
+ /* soyali asosiy chiroq (zal yorugʻligi) */
+ const key=new T.SpotLight(lin(0xffc58a),700,0,Math.PI/3.2,1,2);key.position.set(0,7.85,2);key.target.position.set(0,0,0);scene.add(key,key.target);
+ key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.bias=-.0004;key.shadow.camera.near=.5;key.shadow.camera.far=16;LT.push({l:key,k:700});
+ [-1,1].forEach(sd=>[-6,3].forEach(z=>{const p=new T.PointLight(lin(0xffb46b),80,0,2);p.position.set(sd*7.2,3.2,z);scene.add(p);LT.push({l:p,k:80})}));
+ scene.add(new T.AmbientLight(lin(0x445066),.5));
+ /* sahna, ekran, parda */
+ bx(15,.5,3,0,.25,SZ+2,M(0x0a0a0c,{roughness:.9}));
+ bx(11.2,6.5,.3,0,3.6,SZ-.2,M(0x020203,{roughness:1}));
+ idle=idleTex();idle.encoding=T.sRGBEncoding;vtex=new T.VideoTexture(V);vtex.encoding=T.sRGBEncoding;vtex.minFilter=T.LinearFilter;vtex.generateMipmaps=false;
+ scr=new T.MeshBasicMaterial({map:idle,toneMapped:false});
+ const s=new T.Mesh(new T.PlaneGeometry(10.4,5.85),scr);s.position.set(0,3.6,SZ+.01);scene.add(s);
+ scrL=new T.SpotLight(lin(0xdfe9ff),520,0,Math.PI/3,1,2);scrL.position.set(0,3.6,SZ+.8);scrL.target.position.set(0,.6,3);scene.add(scrL,scrL.target);
+ const cu=new T.InstancedMesh(new T.CylinderGeometry(.13,.13,7.2,10),M(0x5a0a14,{roughness:1}),16);
+ for(let i=0;i<8;i++)[-1,1].forEach((sd,k)=>cu.setMatrixAt(i*2+k,m4.setPosition(sd*(5.9+i*.16),3.8,SZ+.1+(i%2)*.08)));cu.castShadow=true;scene.add(cu);
+ /* dinamiklar, chiqish belgilari, proyektor oynasi */
+ const spk=M(0x050506,{roughness:.5,metalness:.3});[-1,1].forEach(sd=>[-6,0,6].forEach(z=>bx(.35,.6,.3,sd*7.6,5.9,z,spk)));
+ const ex=em(0x00d070,3);bx(.5,.18,.06,-5,6.2,11.82,ex);bx(.5,.18,.06,5,6.2,11.82,ex);
+ bx(1.6,.5,.06,0,6.4,11.82,M(0x050608,{roughness:.1,metalness:.6}));
+ /* pogʻonalar va oʻrindiqlar */
+ const tier=M(0x15151a,{roughness:1}),stepL=em(0xff9a2e,1.8);
+ seats.forEach(q=>{bx(11.5,q.t,1.25,0,q.t/2,q.z,tier);bx(11.3,.025,.03,0,q.t+.01,q.z-.6,stepL)});
+ const sm=M(0xffffff,{roughness:1}),am=M(0x0b0b0d,{roughness:.35,metalness:.4});
+ iB=new T.InstancedMesh(new T.BoxGeometry(.56,.14,.56),sm,seats.length);
+ iK=new T.InstancedMesh(new T.BoxGeometry(.56,.64,.12),sm,seats.length);
+ const iA=new T.InstancedMesh(new T.BoxGeometry(.05,.07,.46),am,seats.length);
+ const qt=new T.Quaternion().setFromEuler(new T.Euler(.14,0,0)),one=new T.Vector3(1,1,1),v=new T.Vector3();
+ seats.forEach((q,i)=>{iB.setMatrixAt(i,m4.setPosition(q.x,q.t+.3,q.z));
+  iK.setMatrixAt(i,new T.Matrix4().compose(v.set(q.x,q.t+.66,q.z+.24),qt,one));
+  iA.setMatrixAt(i,m4.setPosition(q.x+.31,q.t+.5,q.z+.02))});
+ [iB,iK,iA].forEach(m=>{m.castShadow=m.receiveShadow=true;scene.add(m)});paint();
+ $('lux').oninput=e=>{renderer.toneMappingExposure=1.4*e.target.value};
+ new ResizeObserver(size).observe(stage);size();loop();
+}
+function fit(){renderer.setPixelRatio(pr);renderer.setSize(stage.clientWidth,stage.clientHeight,false)}
+function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+ prMax=Math.max(1,Math.min(3,3840/w,Math.sqrt(8.3e6/(w*h))));pr=prMax;fit();camera.aspect=w/h;camera.updateProjectionMatrix()}
+const cR=lin(0x9e1226),cT=lin(0x2b2b31),cS=lin(0xe0b863),cH=lin(0xff4a63);
+function paint(){seats.forEach((q,i)=>{const c=i===sel?cS:q.taken?cT:i===hov?cH:cR;iB.setColorAt(i,c);iK.setColorAt(i,c)});iB.instanceColor.needsUpdate=iK.instanceColor.needsUpdate=true}
+function aim(){
+ const d=look.clone().sub(pos).normalize();
+ const yaw=Math.atan2(d.x,-d.z)+dy,pit=Math.asin(d.y)+dp;
+ camera.position.copy(pos);
+ camera.lookAt(pos.x+Math.sin(yaw)*Math.cos(pit),pos.y+Math.sin(pit),pos.z-Math.cos(yaw)*Math.cos(pit));
+}
+let fN=0,fT=0,good=0;
+function loop(now=performance.now()){
+ requestAnimationFrame(loop);
+ const play=scr.map===vtex;dim+=((play?.25:1)-dim)*.02;
+ LT.forEach(o=>o.l.intensity=o.k*dim);scrL.intensity=520*(play?1:.35);
+ pos.lerp(tp,.07);look.lerp(tl,.07);camera.fov+=(tf-camera.fov)*.12;camera.updateProjectionMatrix();aim();
+ try{renderer.render(scene,camera)}
+ catch(e){if(!tainted&&scr.map===vtex){tainted=true;setScreen(false);note('Brauzer bu efirni 3D ekranga chiqarishga ruxsat bermadi. “Kanalni toʻliq ekranda koʻrish” tugmasidan foydalaning.',6000)}}
+ fN++;if(!fT)fT=now;
+ if(now-fT>=1000){const fps=Math.round(fN*1000/(now-fT));fN=0;fT=now;
+  if(fps<55&&pr>1){pr=Math.max(1,pr*.85);good=0;fit()}
+  else if(fps>=59&&++good>=5&&pr<prMax){pr=Math.min(prMax,pr*1.1);good=0;fit()}
+  $('fps').textContent=Math.round(stage.clientWidth*pr)+'×'+Math.round(stage.clientHeight*pr)+' · '+fps+' FPS'}
+}
+function goOverview(){tp.set(0,6.5,11.5);tl.set(0,2.4,-8);dy=dp=0;tf=55;$('dist').textContent=''}
+function select(i){
+ const q=seats[i];if(!q||q.taken)return;
+ sel=i;paint();tp.set(q.x,q.t+1.2,q.z);tl.set(0,3.4,SZ);dy=dp=0;tf=58;
+ $('seatinfo').textContent='Qator '+(q.r+1)+', oʻrin '+(q.c+1);$('seatinfo').className='';
+ $('dist').textContent='Ekrangacha '+Math.round(q.z-SZ)+' m · Balandlik '+(q.t+1.2).toFixed(1).replace('.',',')+' m';
+ mapDraw();
+}
+/* sichqoncha / barmoq */
+const rc=T?new T.Raycaster():0,mp=T?new T.Vector2():0;let down=null;
+function hit(e){const b=cv.getBoundingClientRect();mp.set((e.clientX-b.left)/b.width*2-1,-((e.clientY-b.top)/b.height)*2+1);rc.setFromCamera(mp,camera);const h=rc.intersectObjects([iB,iK])[0];return h?h.instanceId:-1}
+cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,m:false};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{
+ if(down){const ddx=e.clientX-down.x,ddy=e.clientY-down.y;if(Math.abs(ddx)+Math.abs(ddy)>5)down.m=true;
+  if(down.m){dy=Math.max(-1.3,Math.min(1.3,dy-(e.movementX||0)*.004));dp=Math.max(-.7,Math.min(.7,dp-(e.movementY||0)*.004))}return}
+ const i=hit(e),tip=$('tip');
+ if(i!==hov){hov=i;paint()}
+ if(i>=0){const q=seats[i];tip.style.display='block';tip.style.left=e.offsetX+14+'px';tip.style.top=e.offsetY+14+'px';tip.textContent='Qator '+(q.r+1)+', oʻrin '+(q.c+1)+(q.taken?' (band)':'');cv.style.cursor=q.taken?'not-allowed':'pointer'}
+ else{tip.style.display='none';cv.style.cursor='grab'}
+});
+cv.addEventListener('pointerup',e=>{if(down&&!down.m){const i=hit(e);if(i>=0)select(i)}down=null});
+cv.addEventListener('pointerleave',()=>{$('tip').style.display='none'});
+cv.addEventListener('wheel',e=>{e.preventDefault();tf=Math.max(28,Math.min(80,tf+e.deltaY*.03))},{passive:false});
+$('zi').onclick=()=>tf=Math.max(28,tf-8);$('zo').onclick=()=>tf=Math.min(80,tf+8);
+$('lf').onclick=()=>dy=Math.max(-1.3,dy-.2);$('rt').onclick=()=>dy=Math.min(1.3,dy+.2);
+$('up').onclick=()=>dp=Math.min(.7,dp+.12);$('dn').onclick=()=>dp=Math.max(-.7,dp-.12);
+$('home').onclick=goOverview;
+
+/* ====== OʻRINDIQLAR XARITASI ====== */
+function mapDraw(){
+ const m=$('map');m.innerHTML='';
+ for(let r=0;r<R;r++){const row=document.createElement('div');row.className='mr';row.innerHTML='<b>'+(r+1)+'</b>';
+  for(let c=0;c<C;c++){if(c===6){const a=document.createElement('span');a.className='aisle';row.appendChild(a)}
+   const i=r*C+c,q=seats[i],b=document.createElement('button');b.className='st'+(q.taken?' t':'')+(i===sel?' s':'');
+   b.title='Qator '+(r+1)+', oʻrin '+(c+1);b.setAttribute('aria-label',b.title+(q.taken?', band':''));b.disabled=q.taken;
+   b.onclick=()=>{select(i);$('dmap').close()};row.appendChild(b)}
+  m.appendChild(row)}
+}
+$('mapbtn').onclick=()=>{mapDraw();$('dmap').showModal()};$('mapx').onclick=()=>$('dmap').close();
+
+/* ====== KANAL QOʻSHISH ====== */
+$('addbtn').onclick=()=>{$('aerr').textContent='';$('dadd').showModal()};$('ac').onclick=()=>$('dadd').close();
+$('ao').onclick=async()=>{
+ const n=$('an').value.trim(),u=$('au').value.trim();
+ if(!/^https?:\/\//i.test(u)){$('aerr').textContent='Havola http:// yoki https:// bilan boshlanishi kerak.';return}
+ let add=[];
+ try{
+  if(/\.m3u(\?|$)/i.test(u)&&!/\.m3u8(\?|$)/i.test(u)){const r=await fetch(u);add=parseM3U(await r.text());if(!add.length)throw 0}
+  else add=[{name:n||'Mening kanalim',src:u}];
+ }catch(e){$('aerr').textContent='Roʻyxatni oʻqib boʻlmadi. Havolani tekshiring (sayt CORS ruxsatini bermasligi mumkin).';return}
+ const cs=store.get('custom',[]).concat(add);store.set('custom',cs);
+ add.forEach(a=>{const f=channels.find(c=>norm(c.name)===norm(a.name));if(f)f.src=a.src;else channels.push(a)});
+ channels.sort((a,b)=>!!b.src-!!a.src);renderList();$('dadd').close();$('an').value=$('au').value='';
+};
+
+/* ====== BOSHLASH ====== */
+setInterval(()=>{$('clock').textContent=new Intl.DateTimeFormat('uz',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Tashkent',hour12:false}).format(new Date())},1000);
+if(T){build();$('cv').style.cursor='grab'}else note('3D kutubxona yuklanmadi — internet aloqasini tekshiring. Kanallarni “toʻliq ekran” orqali koʻrish mumkin.');
+loadPlaylist();
+</script>
+</body>
+</html>
